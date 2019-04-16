@@ -82,16 +82,12 @@ router.delete("/delete", (req, res) => {
   User.findById(id, "manager", function(err, manager) {
     console.log(manager, "test");
     User.updateMany({ manager: id }, { $set: { manager: manager } }, function(
-      err,
-      docs
-    ) {
+      err,docs) {
       if (err) res.send(err);
       len = docs.nModified;
       var query = { _id: manager };
       User.findOneAndUpdate(query, { $inc: { numberOfDr: len } }, function(
-        err,
-        user
-      ) {
+        err,user) {
         if (err) res.send(err);
         console.log(req.body.manager);
         res.send(user);

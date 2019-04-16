@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-
+const mongoosePaginate = require('mongoose-paginate-v2');
 const userSchema = new Schema({
   id: Number,
   name: String,
@@ -15,7 +15,7 @@ const userSchema = new Schema({
   numberOfDr: Number,
   avatar: {data : Buffer, contentType: String}
 });
-
-const User = mongoose.model('employee', userSchema);
+userSchema.plugin(mongoosePaginate);
+const User = mongoose.model('employeeManager', userSchema);
 
 module.exports = User;

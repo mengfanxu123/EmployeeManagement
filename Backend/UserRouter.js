@@ -83,15 +83,15 @@ router.delete("/delete", (req, res) => {
     console.log(manager, "test");
     User.updateMany({ manager: id }, { $set: { manager: manager } }, function(
       err,docs) {
-      if (err) res.send(err);
-      len = docs.nModified;
-      var query = { _id: manager };
-      User.findOneAndUpdate(query, { $inc: { numberOfDr: len } }, function(
-        err,user) {
-        if (err) res.send(err);
-        console.log(req.body.manager);
-        res.send(user);
-      });
+    //   if (err) res.send(err);
+    //   len = docs.nModified;
+    //   var query = { _id: manager };
+    //   User.findOneAndUpdate(query, { $inc: { numberOfDr: len } }, function(
+    //     err,user) {
+    //     if (err) res.send(err);
+    //     console.log(req.body.manager);
+    //     res.send(user);
+    //   });
     });
   });
   User.findByIdAndDelete(id, err => {

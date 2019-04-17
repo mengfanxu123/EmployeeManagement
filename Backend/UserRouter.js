@@ -35,9 +35,16 @@ router.get("/all", (req, res) => {
 });
 
 router.get("/managerLists", (req, res) => {
-  User.find({ name: { $ne: "None" }}, "id name", function(err, docs) {
+  User.find({ name: { $ne: "None" } }, "id name", function(err, docs) {
     if (err) res.send(err);
     res.status(200).json(docs);
+  });
+});
+
+router.get("/drReports", (req, res) => {
+  User.find({ manager: req.body.id }, function(err, docs) {
+    if (err) res.status(400).send("drReports err" + err);
+    res.status(500).json(docs);
   });
 });
 
@@ -55,7 +62,7 @@ router.post("/addUser", upload.single("file"), (req, res) => {
     manager: req.body.manager,
     numberOfDr: 0,
     avatar: {
-      data: fs.readFileSync(req.file.path),
+      data: req.file.path,
       contentType: req.file.mimetype
     }
   });
@@ -78,11 +85,44 @@ router.post("/addUser", upload.single("file"), (req, res) => {
 });
 
 router.delete("/delete", (req, res) => {
-  let id = req.query.id;
-  User.findById(id, "manager", function(err, manager) {
-    console.log(manager, "test");
-    User.updateMany({ manager: id }, { $set: { manager: manager } }, function(
-      err,docs) {
+  let employeeId = req.query.id;
+  User.findById(employeeId, "manager", function(err, employee) {
+    if (err || !employee)
+      return res.status(400).send("delete user fail: " + err);
+    // Find employee's manager.
+    console.log(employee.manager, "test");
+    // Find employee's DRs.
+    // Set DRs' manager to the employee's manager, if any.
+    User.updateMany(
+      { manager: employeeId },
+      { $set: { manager: employee.manager } },
+      function(err, docs) {
+        if (err) return res.status(500).send("delete user fail: " + err);
+
+        // If has manager, decrement employee's manager's DR count.
+        if (employee.manager) {
+          User.findOneAndUpdate(
+            { _id: employee.manager },
+            { $inc: { numberOfDr: docs.nModified - 1 } },
+            function(err, user) {
+              if (err) return res.status(500).send("delete user fail: " + err);
+            }
+          );
+        }
+        // Finally delete this employee and return.
+        User.findByIdAndDelete(employeeId, function(err) {
+          if (err) {
+            return res.status(500).send("delete user fail: " + err);
+          }
+          return res.status(200).send("delete user success");
+        });
+      }
+    );
+
+    // Finally, delete this employee and return.
+
+    // User.updateMany({ manager: id }, { $set: { manager: manager} }, function(
+    //   err,docs) {
     //   if (err) res.send(err);
     //   len = docs.nModified;
     //   var query = { _id: manager };
@@ -92,19 +132,22 @@ router.delete("/delete", (req, res) => {
     //     console.log(req.body.manager);
     //     res.send(user);
     //   });
-    });
+    // });
   });
-  User.findByIdAndDelete(id, err => {
-    if (err) {
-      return res.send("delete user fail" + err);
-    }
-    return res.send("delete user success");
-  });
+  //   User.findByIdAndDelete(id, err => {
+  //     if (err) {
+  //       return res.send("delete user fail" + err);
+  //     }
+  //     return res.send("delete user success");
+  //   });
 });
 
 router.put("/updateUser", upload.single("file"), (req, res) => {
+
   let id = req.query.id;
   console.log(id, "id");
+//   if ()
+    
   User.findOneAndUpdate(
     { _id: id },
     {
@@ -128,22 +171,5 @@ router.put("/updateUser", upload.single("file"), (req, res) => {
     }
   );
 });
-
-router.get('/list', (req, res) => {
-    const settings = JSON.parse(req.query.settings);
-    const orderBy = settings.orderBy;
-    const order = settings.order;
-    const query = {};
-    const options = {
-      page: settings.page + 1,
-      limit: settings.rowsPerPage,
-      sort: { [orderBy] : order },
-    };
-    
-    console.log(options);
-    User.paginate(query, options).then((result) => {
-      res.json(result);
-    });
-  });
 
 module.exports = router;

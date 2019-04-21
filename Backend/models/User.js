@@ -5,7 +5,7 @@ const userSchema = new Schema({
   name: String,
   title: String,
   sex: String,
-  startDate: Number,
+  startDate: String,
   officePhone: String,
   cellPhone: String,
   sms: Number,
@@ -16,5 +16,4 @@ const userSchema = new Schema({
 });
 userSchema.plugin(mongoosePaginate);
 const User = mongoose.model("employeeManager", userSchema);
-
 module.exports = User;

@@ -1,25 +1,34 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from "react";
+import { Router, Route, Link as RouterLink, Switch } from "react-router-dom";
+import Link from "@material-ui/core/Link";
+import Button from "@material-ui/core/Button";
+import { createBrowserHistory } from "history";
+import addEmployee from "./containers/addEmployee";
+import Home from "./containers/Home";
+export const history = createBrowserHistory();
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+      <div>
+        <Router history={history}>
+          <div>
+            <Button variant="contained">
+              <Link component={RouterLink} to="/addEmployee">
+                Add Employee
+              </Link>
+            </Button>
+            <Button variant="contained">
+              <Link component={RouterLink} to="/">
+                Home
+              </Link>
+            </Button>
+            <Switch>
+              <Route exact={true} path="/" component={Home} />
+              <Route path="/addManger" component={addEmployee} />
+            </Switch>
+          </div>
+        </Router>
       </div>
     );
   }

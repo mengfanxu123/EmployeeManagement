@@ -27,14 +27,33 @@ var storage = multer.diskStorage({
 });
 var upload = multer({ storage: storage });
 
-router.get("/all", (req, res) => {
-  User.find((err, user) => {
-    if (err) res.send(err);
-    res.status(200).json(user);
+// router.get("/all", (req, res) => {
+//   User.find((err, user) => {
+//     if (err) res.send(err);
+//     res.status(200).json(user);
+//   });
+// });
+
+router.get("/listUser", (req, res) => {
+  const orderBy = req.body.orderBy;
+  const order = req.body.order;
+  const query = {};
+  const options = {
+    page: req.body.page + 1,
+    limit: 10,
+    sort: { [orderBy]: order },
+    populate: {
+      path: "manager",
+      select: "name",
+      sort: { [orderBy]: order }
+    }
+  };
+  User.paginate(query, options).then(result => {
+    res.json(result);
   });
 });
 
-router.get("/managerLists", (req, res) => {
+router.get("/employeeList", (req, res) => {
   User.find({ name: { $ne: "None" } }, "id name", function(err, docs) {
     if (err) res.send(err);
     res.status(200).json(docs);
@@ -48,9 +67,9 @@ router.get("/drReports", (req, res) => {
   });
 });
 
-router.post("/addUser", upload.single("file"), (req, res) => {
+router.post("/addUser", upload.single("avatar"), (req, res) => {
   console.log(req.body);
-  console.log(req.file.path);
+  // console.log(req.file.path);
   const user = new User({
     name: req.body.name,
     title: req.body.title,
@@ -62,8 +81,8 @@ router.post("/addUser", upload.single("file"), (req, res) => {
     manager: req.body.manager,
     numberOfDr: 0,
     avatar: {
-      data: req.file.path,
-      contentType: req.file.mimetype
+      data: req.avatar.path,
+      contentType: req.avatar.mimetype
     }
   });
   user.save(function(err) {
@@ -118,36 +137,13 @@ router.delete("/delete", (req, res) => {
         });
       }
     );
-
-    // Finally, delete this employee and return.
-
-    // User.updateMany({ manager: id }, { $set: { manager: manager} }, function(
-    //   err,docs) {
-    //   if (err) res.send(err);
-    //   len = docs.nModified;
-    //   var query = { _id: manager };
-    //   User.findOneAndUpdate(query, { $inc: { numberOfDr: len } }, function(
-    //     err,user) {
-    //     if (err) res.send(err);
-    //     console.log(req.body.manager);
-    //     res.send(user);
-    //   });
-    // });
   });
-  //   User.findByIdAndDelete(id, err => {
-  //     if (err) {
-  //       return res.send("delete user fail" + err);
-  //     }
-  //     return res.send("delete user success");
-  //   });
 });
 
 router.put("/updateUser", upload.single("file"), (req, res) => {
-
   let id = req.query.id;
   console.log(id, "id");
-//   if ()
-    
+
   User.findOneAndUpdate(
     { _id: id },
     {

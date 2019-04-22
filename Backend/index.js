@@ -12,6 +12,7 @@ db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", function() {
   console.log("mongodb connected.");
 });
-app.use(express.json());
+app.use(bodyParser.json());
 app.use("/users", users);
+app.use("/public", express.static("public"));
 app.listen(4000, () => console.log("UserList app listening on port 4000!"));

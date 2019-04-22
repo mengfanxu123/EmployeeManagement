@@ -7,21 +7,27 @@ import { InputLabel, Input } from "@material-ui/core";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import PropTypes from "prop-types";
-import { withStyles } from "@material-ui/core/styles";
+// import { withStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import NumberFormat from "react-number-format";
+// import Avatar from "@material-ui/core/Avatar";
+// // const styles = theme => ({
+//   container: {
+//     display: "flex",
+//     flexWrap: "wrap"
+//   },
+//   textField: {
+//     marginLeft: theme.spacing.unit,
+//     marginRight: theme.spacing.unit,
+//     width: 200
+//   },
 
-const styles = theme => ({
-  container: {
-    display: "flex",
-    flexWrap: "wrap"
-  },
-  textField: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit,
-    width: 200
-  }
-});
+//   bigAvatar: {
+//     margin: 10,
+//     width: 60,
+//     height: 60
+//   }
+// });
 
 class addEmployee extends Component {
   state = {
@@ -40,7 +46,7 @@ class addEmployee extends Component {
     previewURL: ""
   };
   componentDidMount() {
-    this.setState({ numberOfDr: 1 });
+    this.setState({ numberOfDr: 0 });
     const { dispatch } = this.props;
     dispatch(employeeList());
   }
@@ -57,35 +63,11 @@ class addEmployee extends Component {
   handleSubmit = e => {
     e.preventDefault();
     this.setState({ submitted: true }, () => {
-      //   const {
-      //     name,
-      //     title,
-      //     sex,
-      //     startDate,
-      //     officePhone,
-      //     cellPhone,
-      //     numberOfDr,
-      //     sms,
-      //     email,
-      //     manager,
-      //     avatar
-      //   } = this.state;
-      //   const employee = {
-      //     name,
-      //     title,
-      //     sex,
-      //     startDate,
-      //     officePhone,
-      //     cellPhone,
-      //     sms,
-      //     email,
-      //     manager,
-      //     numberOfDr,
-      //     avatar
-      //   };
       const formData = new FormData();
       for (let key in this.state) {
-        formData.append(key, this.state[key]);
+        if (key !== "previewURL" && key !== "submitted") {
+          formData.append(key, this.state[key]);
+        }
       }
       const { dispatch } = this.props;
       dispatch(addEmployees(formData));
@@ -94,7 +76,6 @@ class addEmployee extends Component {
   };
 
   render() {
-    // const { classes } = this.props;
     const { previewURL, name } = this.state;
     const { employees } = this.props;
     return (
@@ -117,7 +98,7 @@ class addEmployee extends Component {
                   />
                 )}
                 <span>
-                  Please select a photo as avatar:
+                  <div>Please select a photo as avatar:</div>
                   <div>
                     <input type="file" onChange={this.handleAvatar} />
                   </div>
@@ -143,6 +124,16 @@ class addEmployee extends Component {
                 value={this.state.title}
                 validators={["required"]}
                 errorMessages={["title is required"]}
+              />
+            </div>
+            <div>
+              <TextValidator
+                label="email"
+                onChange={e => this.setState({ email: e.target.email })}
+                name="email"
+                value={this.state.email}
+                validators={["isEmail"]}
+                errorMessages={["email is not valid"]}
               />
             </div>
             <div>
@@ -176,9 +167,10 @@ class addEmployee extends Component {
             <div>
               <NumberFormat
                 customInput={TextField}
-                format="+1 (###) ###-####"
+                format="+1(###)###-####"
                 mask="_"
                 onChange={e => this.setState({ officePhone: e.target.value })}
+                validators={["required"]}
               />
             </div>
             <div>
@@ -208,11 +200,6 @@ class addEmployee extends Component {
                 label="Select"
                 value={this.state.manager}
                 onChange={e => this.setState({ manager: e.target.value })}
-                //   SelectProps={{
-                //     MenuProps: {
-                //       className: classes.menu
-                //     }
-                //   }}
                 margin="normal"
               >
                 <MenuItem>None</MenuItem>
@@ -238,16 +225,12 @@ class addEmployee extends Component {
     );
   }
 }
+const mapStateToProps = function(state) {
+  return { employees: state.employees };
+};
 
 // addEmployee.prototype = {
 //   classes: PropTypes.object.isRequired
 // };
-// const mapStateToProps = state => ({
-//   employees: state.employees
-// });
-
-const mapStateToProps = function(state) {
-  return { employees: state.employees };
-};
 
 export default connect(mapStateToProps)(addEmployee);

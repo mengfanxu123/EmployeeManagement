@@ -31,7 +31,12 @@ const employees = (state = initState, action) => {
         isFetching: false,
         error: null
       };
-
+    case "DELETE_EMPLOYEE_SUCCESS":
+      return {
+        ...state,
+        isFetching: false,
+        error: null
+      };
     default:
       return state;
   }

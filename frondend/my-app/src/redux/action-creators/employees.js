@@ -35,6 +35,12 @@ function addEmployeeSuccess() {
   };
 }
 
+function deleteEmployeeSuccess() {
+  return {
+    type: "DELETE_EMPLOYEE_SUCCESS"
+  };
+}
+
 // export function updatePages(page = 0, limit = 5) {
 //   return (dispatch, getState) => {
 //     console.log("updatepages!!");
@@ -50,10 +56,10 @@ function addEmployeeSuccess() {
 //   };
 // }
 
-export function addEmployees(employee) {
+export function addEmployees(formData) {
   return (dispatch, getState) => {
     axios
-      .post("/users/addUser", employee)
+      .post("/users/addUser", formData)
       .then(reponse => {
         console.log("post sucess");
         dispatch(addEmployeeSuccess());
@@ -83,13 +89,37 @@ export function employeeList() {
 
 export function allEmployees(defaultData) {
   return (dispatch, getState) => {
+    const { orderBy = "name", order = "asc" } = defaultData;
     axios
-      .get("/users/allEmployees", defaultData)
+      .get("/users/allEmployees", {
+        params: {
+          orderBy,
+          order
+        }
+      })
       .then(reponse => {
         console.log("post sucess");
         // dispatch(updatePages());
-        console.log(reponse.data);
-        dispatch(requestSuccess(reponse.data));
+        console.log(reponse.data.docs);
+        dispatch(requestSuccess(reponse.data.docs));
+      })
+      .catch(err => {
+        dispatch(requestFail(err));
+      });
+  };
+}
+
+export function deleteEmployee(employeeId, curData) {
+  console.log("deleteEmployee", employeeId);
+  return (dispatch, getState) => {
+    axios
+      .delete("/users/delete?id=" + employeeId)
+      .then(reponse => {
+        dispatch(deleteEmployeeSuccess());
+        console.log(reponse);
+      })
+      .then(reponse => {
+        dispatch(allEmployees(curData));
       })
       .catch(err => {
         dispatch(requestFail(err));

@@ -34,9 +34,9 @@ var upload = multer({ storage: storage });
 //   });
 // });
 
-router.get("/listUser", (req, res) => {
-  const orderBy = req.body.orderBy;
-  const order = req.body.order;
+router.get("/allEmployees", (req, res) => {
+  const orderBy = req.query.orderBy || "name";
+  const order = req.query.order || "asc";
   const query = {};
   const options = {
     page: req.body.page + 1,
@@ -68,25 +68,26 @@ router.get("/drReports", (req, res) => {
 });
 
 router.post("/addUser", upload.single("avatar"), (req, res) => {
-  console.log(req.body);
   // console.log(req.file.path);
+
+  console.log(req.body);
   const user = new User({
     name: req.body.name,
     title: req.body.title,
     startDate: req.body.startDate,
     officePhone: req.body.officePhone,
     cellPhone: req.body.cellPhone,
-    sms: req.body.sms,
+    sms: 0, // TIDO: Use the correct format.
     email: req.body.email,
-    manager: req.body.manager,
+    manager: req.body.manager === "None" ? "" : req.body.manager,
     numberOfDr: 0,
     avatar: {
-      data: req.avatar.path,
-      contentType: req.avatar.mimetype
+      data: req.file.path,
+      contentType: req.file.mimetype
     }
   });
   user.save(function(err) {
-    if (err) console.log(err);
+    if (err) res.status(500).send(err);
   });
   if (req.body.manager !== "None") {
     var query = { _id: req.body.manager };

@@ -27,20 +27,16 @@ var storage = multer.diskStorage({
 });
 var upload = multer({ storage: storage });
 
-// router.get("/all", (req, res) => {
-//   User.find((err, user) => {
-//     if (err) res.send(err);
-//     res.status(200).json(user);
-//   });
-// });
-
 router.get("/allEmployees", (req, res) => {
+  //console.log("all");
   const orderBy = req.query.orderBy || "name";
   const order = req.query.order || "asc";
+  const page = parseInt(req.query.page) || 0;
+  const limit = parseInt(req.query.limit) || 5;
   const query = {};
   const options = {
-    page: req.body.page + 1,
-    limit: 10,
+    page: page + 1,
+    limit,
     sort: { [orderBy]: order },
     populate: {
       path: "manager",
@@ -49,12 +45,20 @@ router.get("/allEmployees", (req, res) => {
     }
   };
   User.paginate(query, options).then(result => {
+    console.log("sending result: ", result);
     res.json(result);
   });
 });
 
 router.get("/employeeList", (req, res) => {
   User.find({ name: { $ne: "None" } }, "id name", function(err, docs) {
+    if (err) res.send(err);
+    res.status(200).json(docs);
+  });
+});
+
+router.get("/editEmployeeList", (req, res) => {
+  User.find({ id: { $ne: req.query.id } }, "id name", function(err, docs) {
     if (err) res.send(err);
     res.status(200).json(docs);
   });
@@ -77,19 +81,26 @@ router.post("/addUser", upload.single("avatar"), (req, res) => {
     startDate: req.body.startDate,
     officePhone: req.body.officePhone,
     cellPhone: req.body.cellPhone,
-    sms: 0, // TIDO: Use the correct format.
+    sms: 0, // TODO: Use the correct format.
     email: req.body.email,
     manager: req.body.manager === "None" ? "" : req.body.manager,
     numberOfDr: 0,
-    avatar: {
-      data: req.file.path,
-      contentType: req.file.mimetype
-    }
+    manager:
+      req.body.manager === "" || req.body.manager === "undefined"
+        ? ""
+        : req.body.manager,
+    avatar: req.file
+      ? {
+          data: req.file.path,
+          contentType: req.file.mimetype
+        }
+      : null
   });
+  // });
   user.save(function(err) {
     if (err) res.status(500).send(err);
   });
-  if (req.body.manager !== "None") {
+  if (req.body.manager !== "") {
     var query = { _id: req.body.manager };
     User.findOneAndUpdate(query, { $inc: { numberOfDr: 1 } }, function(
       err,
@@ -141,10 +152,34 @@ router.delete("/delete", (req, res) => {
   });
 });
 
-router.put("/updateUser", upload.single("file"), (req, res) => {
+router.put("/updateEmployee", upload.single("avatar"), (req, res) => {
+  console.log("id");
   let id = req.query.id;
+  let oldManager = req.body.oldManger;
+  let newManager = req.body.newManager;
   console.log(id, "id");
-
+  // if Manager changed 1. None - new Manager 2. oldManger to newManger 3. oldMange to None
+  // find oldManager and decrease 1 to the old ManagerReport
+  // Manager change ?
+  if (oldManager !== newManager) {
+    User.findOneAndUpdate(
+      { id: oldManager },
+      { $inc: { numberOfDr: -1 } },
+      function(err, user) {
+        if (err) res.status(500).send(err);
+        // res.send(user);
+      }
+    );
+    User.findOneAndUpdate(
+      { id: req.boy.manager },
+      { $inc: { numberOfDr: 1 } },
+      function(err, user) {
+        if (err) res.status(500).send(err);
+        // res.send(user);
+      }
+    );
+  }
+  console.log(req.body.name);
   User.findOneAndUpdate(
     { _id: id },
     {
@@ -155,16 +190,18 @@ router.put("/updateUser", upload.single("file"), (req, res) => {
       cellPhone: req.body.cellPhone,
       sms: req.body.sms,
       email: req.body.email,
-      manager: req.body.manager,
+      // manager: req.body.manager,
       numberOfDr: req.body.numberOfDr,
-      avatar: {
-        data: fs.readFileSync(req.file.path),
-        contentType: req.file.mimetype
-      }
+      avatar: req.file
+        ? {
+            data: req.file.path,
+            contentType: req.file.mimetype
+          }
+        : null
     },
     function(err, user) {
       if (err) console.log(err);
-      res.send("User successfully updated!");
+      else res.status(200).send(user);
     }
   );
 });

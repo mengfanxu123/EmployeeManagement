@@ -62,13 +62,19 @@ class addEmployee extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
+    const { employee } = this.state;
+    const managerID = employee || "";
+    // console.log(typeof manager);
+    console.log(this.state.sex, "test sex");
     this.setState({ submitted: true }, () => {
       const formData = new FormData();
+      formData.append("manager", managerID);
       for (let key in this.state) {
-        if (key !== "previewURL" && key !== "submitted") {
+        if (key !== "previewURL" && key !== "submitted" && key !== "manager") {
           formData.append(key, this.state[key]);
         }
       }
+
       const { dispatch } = this.props;
       dispatch(addEmployees(formData));
       setTimeout(() => this.setState({ submitted: false }), 10);
@@ -78,6 +84,7 @@ class addEmployee extends Component {
   render() {
     const { previewURL, name } = this.state;
     const { employees } = this.props;
+    console.log(this.state.sex, "sex");
     return (
       <div className="addform">
         <h1>PLease Add Employee</h1>
@@ -129,7 +136,7 @@ class addEmployee extends Component {
             <div>
               <TextValidator
                 label="email"
-                onChange={e => this.setState({ email: e.target.email })}
+                onChange={e => this.setState({ email: e.target.value })}
                 name="email"
                 value={this.state.email}
                 validators={["isEmail"]}
@@ -202,8 +209,8 @@ class addEmployee extends Component {
                 onChange={e => this.setState({ manager: e.target.value })}
                 margin="normal"
               >
-                <MenuItem>None</MenuItem>
-                {employees.data.map(employee => (
+                <MenuItem value="">None</MenuItem>
+                {employees.allEmployeeList.map(employee => (
                   <MenuItem key={employee.id} value={`${employee._id}`}>
                     {employee.name}
                   </MenuItem>

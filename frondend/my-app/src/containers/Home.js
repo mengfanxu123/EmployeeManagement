@@ -9,27 +9,21 @@ import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import TableSortLabel from "@material-ui/core/TableSortLabel";
-import TablePagination from "@material-ui/core/TablePagination";
 import Tooltip from "@material-ui/core/Tooltip";
-import {
-  BrowserRouter,
-  Route,
-  Link as RouterLink,
-  Switch
-} from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import Dialog from "@material-ui/core/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Avatar from "@material-ui/core/Avatar";
-// import DeleteIcon from "@material-ui/icons/Delete";
-import { withStyles } from "@material-ui/core/styles";
 import {
   allEmployees,
-  deleteEmployee
+  deleteEmployee,
+  updateEmployee,
+  requestStart
 } from "../redux/action-creators/employees";
 import Edit from "../componets/Edit";
+import ReactDOM from "react-dom";
+
 const rows = [
   { id: "avatar", numeric: false, disablePadding: false, label: "avatar" },
   { id: "name", numeric: false, disablePadding: false, label: "name" },
@@ -47,12 +41,12 @@ const rows = [
     disablePadding: false,
     label: "officePhone"
   },
-  {
-    id: "cellPhone",
-    numeric: false,
-    disablePadding: false,
-    label: "cellPhone"
-  },
+  // {
+  //   id: "cellPhone",
+  //   numeric: false,
+  //   disablePadding: false,
+  //   label: "cellPhone"
+  // },
   {
     id: "numberOfDr",
     numeric: true,
@@ -60,7 +54,8 @@ const rows = [
     label: "NumberOfDr"
   },
   { id: "sms", numeric: false, disablePadding: false, label: "sms" },
-  { id: "manager", numeric: true, disablePadding: false, label: "manager" }
+  { id: "manager", numeric: true, disablePadding: false, label: "manager" },
+  { id: "email", numeric: true, disablePadding: false, label: "email" }
 ];
 class EnhancedTableHead extends React.Component {
   createSortHandler = property => event => {
@@ -116,21 +111,48 @@ EnhancedTableHead.propTypes = {
 class Home extends Component {
   state = {
     edit: false,
-    manager: [],
+    employee: [],
     total: 0,
     order: "asc",
     orderBy: "name",
     page: 0,
-    searchVal: ""
+    searchVal: "",
+    oldEmployee: ""
   };
+
+  eventListenerAdded = false;
+
   componentDidMount() {
     const { dispatch } = this.props;
     const defaultData = {
-      page: this.state.page,
       order: this.state.order,
-      orderBy: this.state.orderBy
+      orderBy: this.state.orderBy,
+      page: this.state.page,
+      limit: this.state.rowsPerPage
     };
     dispatch(allEmployees(defaultData));
+  }
+
+  componentDidUpdate() {
+    const { employeeList } = this.props;
+    if (!this.eventListenerAdded && !employeeList.isFetching) {
+      this.eventListenerAdded = true;
+      ReactDOM.findDOMNode(
+        this.refs["table-body"]
+      ).parentNode.parentNode.addEventListener("scroll", e => {
+        const { srcElement } = e;
+        const { clientHeight, scrollHeight, scrollTop } = srcElement;
+        console.log(employeeList);
+        if (
+          !employeeList.isFetching &&
+          employeeList.hasNextPage &&
+          clientHeight + scrollTop === scrollHeight
+        ) {
+          // alert("bottom!!");
+          this.nextPage();
+        }
+      });
+    }
   }
   handleRequestSort = (event, property) => {
     const orderBy = property;
@@ -140,24 +162,30 @@ class Home extends Component {
       order = "asc";
     }
 
-    this.setState({ order, orderBy }, () => {
+    this.setState({ order, orderBy, page: 0 }, () => {
       const { dispatch } = this.props;
       const defaultData = {
-        page: this.state.page,
         order: this.state.order,
-        orderBy: this.state.orderBy
+        orderBy: this.state.orderBy,
+        page: this.state.page,
+        limit: this.state.rowsPerPage
       };
+      //   console.log(property, "property");
+      //   console.log(defaultData, "def");
+      dispatch(requestStart());
       dispatch(allEmployees(defaultData));
     });
   };
 
-  handleChangePage = (event, page) => {
-    this.setState({ page }, () => {
+  nextPage = () => {
+    const { page } = this.state;
+    this.setState({ page: page + 1 }, () => {
       const { dispatch } = this.props;
       const defaultData = {
-        page: this.state.page,
         order: this.state.order,
-        orderBy: this.state.orderBy
+        orderBy: this.state.orderBy,
+        page: this.state.page,
+        limit: this.state.rowsPerPage
       };
       dispatch(allEmployees(defaultData));
     });
@@ -169,10 +197,12 @@ class Home extends Component {
     });
   };
 
-  handleEdit = user => {
+  handleEdit = employee => {
     this.setState({ edit: true });
-    this.setState({ user: user });
-    console.log(this.state.edit, "test Eidt");
+    console.log(employee);
+    this.setState({ oldManager: employee.manager });
+    this.setState({ employee: employee });
+    console.log(this.state, "test Eidt");
   };
 
   handleCloseEdit = () => {
@@ -181,25 +211,41 @@ class Home extends Component {
 
   handleDelete = id => {
     console.log("handleDate", id);
+    this.setState({ page: 0 }, () => {
+      const { dispatch } = this.props;
+      const curData = {
+        order: this.state.order,
+        orderBy: this.state.orderBy,
+        page: this.state.page,
+        limit: this.state.rowsPerPage
+      };
+      dispatch(requestStart());
+      dispatch(deleteEmployee(id, curData));
+    });
+  };
+  handleUpdateEmployee = employee => {
+    console.log("edit");
     const { dispatch } = this.props;
     const curData = {
-      page: this.state.page,
       order: this.state.order,
-      orderBy: this.state.orderBy
+      orderBy: this.state.orderBy,
+      page: this.state.page,
+      limit: this.state.rowsPerPage
     };
-    dispatch(deleteEmployee(id, curData));
+    console.dir(employee);
+    dispatch(updateEmployee(employee, curData));
   };
 
   render() {
-    const { order, orderBy, rowsPerPage, page, searchVal, total } = this.state;
+    const { order, orderBy, searchVal } = this.state;
     const { employeeList } = this.props;
+    console.log(employeeList.data, "employeeList");
     let usersUI;
-    console.log(this.props.employeeList);
     if (employeeList.isFetching) {
       usersUI = <p>Loading</p>;
     } else if (employeeList.error !== "") {
       usersUI = (
-        <div className="tableStyle">
+        <div>
           <div>
             <TextField
               id="standard-search"
@@ -210,80 +256,91 @@ class Home extends Component {
             />
           </div>
           <BrowserRouter>
-            <Table>
-              <EnhancedTableHead
-                order={order}
-                orderBy={orderBy}
-                onRequestSort={this.handleRequestSort}
-                rowCount={employeeList.data.length}
-              />
-              <TableBody>
-                {employeeList.data.map((employee, index) => {
-                  const lowerCaseName = employee.name.toLowerCase();
-                  const lowerCaseSearchVal = searchVal.toLowerCase();
-                  if (lowerCaseName.includes(lowerCaseSearchVal)) {
-                    return (
-                      <TableRow>
-                        <TableCell>
-                          <Avatar alt="avatar" src={employee.avatar.data} />
-                        </TableCell>
-                        <TableCell>{employee.name}</TableCell>
-                        <TableCell>{employee.title}</TableCell>
-                        <TableCell>{employee.sex}</TableCell>
-                        <TableCell>{employee.starDate}</TableCell>
-                        <TableCell>{employee.officePhone}</TableCell>
-                        <TableCell>{employee.numberOfDr}</TableCell>
-                        <TableCell>
-                          {employee.manager.length === 0
-                            ? ""
-                            : employee.manager[0].name}
-                        </TableCell>
-                        <Button
-                          variant="contained"
-                          color="default"
-                          onClick={e => {
-                            this.handleDelete(employee._id);
-                          }}
-                        >
-                          {/* <DeleteIcon /> */}
-                          Delete
-                        </Button>
-                        <Button
-                          onClick={e => {
-                            this.handleEdit(employee);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        <Dialog
-                          open={this.state.edit}
-                          onClose={this.closeEdit}
-                          aria-labelledby="form-dialog-title"
-                        >
-                          <DialogTitle id="form-dialog-title">
-                            PLEASE EDIT INFORMATION
-                          </DialogTitle>
-                          <DialogContent>
-                            <div>
-                              <Edit
-                                buttonHandleEdit={this.handleEdit}
-                                userDetail={this.state.employee}
-                                // updateUser={this.props.updateUser}
-                                closeEdit={this.closeEdit}
+            <EnhancedTableHead
+              order={order}
+              orderBy={orderBy}
+              onRequestSort={this.handleRequestSort}
+              rowCount={employeeList.data.length}
+            />
+            <div style={{ overflow: "auto", height: "300px" }}>
+              <Table style={{ tableLayout: "fixed" }}>
+                <TableBody ref="table-body">
+                  {employeeList.data.map((employee, index) => {
+                    console.log(employee.startDate, "startDATE");
+                    const lowerCaseName = employee.name.toLowerCase();
+                    const lowerCaseSearchVal = searchVal.toLowerCase();
+                    if (lowerCaseName.includes(lowerCaseSearchVal)) {
+                      return (
+                        <TableRow>
+                          <TableCell>
+                            {employee.avatar ? (
+                              <Avatar alt="avatar" src={employee.avatar.data} />
+                            ) : (
+                              <Avatar
+                                alt="avatar"
+                                src={
+                                  "https://static.standard.co.uk/s3fs-public/thumbnails/image/2017/08/15/12/smileyfaceemoji1508a.jpg?w968"
+                                }
                               />
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableRow>
-                    );
-                  } else {
-                    return null;
-                  }
-                })}
-              </TableBody>
-            </Table>
+                            )}
+                          </TableCell>
+                          <TableCell>{employee.name}</TableCell>
+                          <TableCell>{employee.title}</TableCell>
+                          <TableCell>{employee.sex}</TableCell>
+                          <TableCell>{employee.startDate}</TableCell>
+                          <TableCell>{employee.officePhone}</TableCell>
+                          <TableCell>{employee.numberOfDr}</TableCell>
+                          <TableCell>{employee.sms}</TableCell>
+                          <TableCell>
+                            {employee.manager ? employee.manager.name : ""}
+                          </TableCell>
+                          <TableCell href="">{employee.email}</TableCell>
+                          <Button
+                            variant="contained"
+                            color="default"
+                            onClick={e => {
+                              this.handleDelete(employee._id);
+                            }}
+                          >
+                            {/* <DeleteIcon /> */}
+                            Delete
+                          </Button>
+                          <Button
+                            onClick={e => {
+                              this.handleEdit(employee);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Dialog
+                            open={this.state.edit}
+                            aria-labelledby="form-dialog-title"
+                          >
+                            <DialogTitle id="form-dialog-title">
+                              PLEASE EDIT INFORMATION
+                            </DialogTitle>
+                            <DialogContent>
+                              <div>
+                                <Edit
+                                  buttonHandleEdit={this.handleEdit}
+                                  employeeDetail={this.state.employee}
+                                  updateEmployee={this.handleUpdateEmployee}
+                                  closeEdit={this.handleCloseEdit}
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableRow>
+                      );
+                    } else {
+                      return null;
+                    }
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </BrowserRouter>
-          <TablePagination
+          {/* <TablePagination
             rowsPerPageOptions={[]}
             component="div"
             count={total}
@@ -296,7 +353,7 @@ class Home extends Component {
               "aria-label": "Next Page"
             }}
             onChangePage={this.handleChangePage}
-          />
+          /> */}
         </div>
       );
     }
@@ -306,4 +363,5 @@ class Home extends Component {
 const mapStateToProps = state => ({
   employeeList: state.employees
 });
+
 export default connect(mapStateToProps)(Home);

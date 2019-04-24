@@ -10,7 +10,7 @@ const userSchema = new Schema({
   cellPhone: String,
   sms: Number,
   email: String,
-  manager: [{ type: Schema.Types.ObjectId, ref: "employeeManager" }],
+  manager: { type: Schema.Types.ObjectId, ref: "employeeManager" },
   numberOfDr: Number,
   avatar: { data: String, contentType: String }
 });

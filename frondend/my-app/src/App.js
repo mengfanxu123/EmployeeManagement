@@ -6,7 +6,6 @@ import Button from "@material-ui/core/Button";
 import { createBrowserHistory } from "history";
 import addEmployee from "./containers/addEmployee";
 import Home from "./containers/Home";
-
 export const history = createBrowserHistory();
 class App extends Component {
   render() {

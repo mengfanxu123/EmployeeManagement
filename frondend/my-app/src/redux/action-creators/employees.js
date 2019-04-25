@@ -128,12 +128,14 @@ export function editManagerList(id) {
 }
 
 export function allEmployees(defaultData) {
+  // console.log(defaultData.managerId, "df id data");
   return dispatch => {
     const {
       orderBy = "name",
       order = "asc",
       page = 0,
-      limit = 5
+      limit = 5,
+      managerId = null
     } = defaultData;
     console.log(defaultData, "defaultData");
     axios
@@ -142,11 +144,12 @@ export function allEmployees(defaultData) {
           orderBy,
           order,
           page,
-          limit
+          limit,
+          managerId
         }
       })
       .then(reponse => {
-        console.log("post sucess");
+        // console.log("post sucess");
         console.log(reponse.data, "resposnse data");
         dispatch(requestSuccess(reponse.data));
       })
@@ -178,11 +181,9 @@ export function updateEmployee(formdata, defaultData) {
   return (dispatch, getState) => {
     axios
       .put("/users/updateEmployee?id=" + formdata.get("id"), formdata)
-
       .then(reponse => {
-        requestStart();
-        dispatch(allEmployees(defaultData));
         console.log(reponse);
+        window.location.reload();
       })
       .catch(err => {
         dispatch(requestFail(err));

@@ -23,6 +23,7 @@ class App extends Component {
                 Home
               </Link>
             </Button>
+            <Button variant="contained" />
             <Switch>
               <Route exact={true} path="/" component={Home} />
               <Route path="/addEmployee" component={addEmployee} />

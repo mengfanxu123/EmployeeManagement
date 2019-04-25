@@ -6,10 +6,9 @@ import { ValidatorForm, TextValidator } from "react-material-ui-form-validator";
 import { InputLabel, Input } from "@material-ui/core";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
-import PropTypes from "prop-types";
-// import { withStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import NumberFormat from "react-number-format";
+import "./containers.css";
 // import Avatar from "@material-ui/core/Avatar";
 // // const styles = theme => ({
 //   container: {
@@ -52,7 +51,7 @@ class addEmployee extends Component {
   }
   handleAvatar = e => {
     let file = e.target.files[0];
-    console.log(file, "test files");
+    // console.log(file, "test files");
     let reader = new FileReader();
     reader.onloadend = () => {
       this.setState({ avatar: file, previewURL: reader.result });
@@ -62,9 +61,9 @@ class addEmployee extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
-    const { employee } = this.state;
-    const managerID = employee || "";
-    // console.log(typeof manager);
+    const { manager } = this.state;
+    const managerID = manager || "";
+    // console.log(managerID);
     console.log(this.state.sex, "test sex");
     this.setState({ submitted: true }, () => {
       const formData = new FormData();
@@ -86,7 +85,7 @@ class addEmployee extends Component {
     const { employees } = this.props;
     console.log(this.state.sex, "sex");
     return (
-      <div className="addform">
+      <div className="addEmployeeForm">
         <h1>PLease Add Employee</h1>
         <ValidatorForm
           ref="from"
@@ -95,22 +94,22 @@ class addEmployee extends Component {
         >
           <div>
             <div className="imgForm">
-              <div>
+              <div className="">
                 {previewURL ? (
                   <img src={previewURL} alt="loading" />
                 ) : (
                   <img
-                    src="https://static.standard.co.uk/s3fs-public/thumbnails/image/2017/08/15/12/smileyfaceemoji1508a.jpg?w968"
+                    src="https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png"
                     alt="loading..."
                   />
                 )}
-                <span>
-                  <div>Please select a photo as avatar:</div>
-                  <div>
-                    <input type="file" onChange={this.handleAvatar} />
-                  </div>
-                </span>
               </div>
+              <span>
+                <div>Please select a photo as avatar:</div>
+                <div>
+                  <input type="file" onChange={this.handleAvatar} />
+                </div>
+              </span>
             </div>
 
             <div>
@@ -150,7 +149,7 @@ class addEmployee extends Component {
               <Select
                 value={this.state.sex}
                 onChange={e => this.setState({ sex: e.target.value })}
-                input={<Input name="sex" id="sex-help" />}
+                // input={<Input name="sex" id="sex-help" />}
               >
                 <MenuItem value="None">
                   <em>None</em>
@@ -176,6 +175,7 @@ class addEmployee extends Component {
                 customInput={TextField}
                 format="+1(###)###-####"
                 mask="_"
+                label="officePhone"
                 onChange={e => this.setState({ officePhone: e.target.value })}
                 validators={["required"]}
               />
@@ -204,7 +204,7 @@ class addEmployee extends Component {
               <TextField
                 id="manager"
                 select
-                label="Select"
+                label="manager"
                 value={this.state.manager}
                 onChange={e => this.setState({ manager: e.target.value })}
                 margin="normal"

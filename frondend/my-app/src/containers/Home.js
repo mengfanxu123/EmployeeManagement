@@ -23,6 +23,7 @@ import {
 } from "../redux/action-creators/employees";
 import Edit from "../componets/Edit";
 import ReactDOM from "react-dom";
+// import { AlertError } from "material-ui/svg-icons";
 
 const rows = [
   { id: "avatar", numeric: false, disablePadding: false, label: "avatar" },
@@ -111,13 +112,15 @@ EnhancedTableHead.propTypes = {
 class Home extends Component {
   state = {
     edit: false,
-    employee: [],
+    employee: null,
     total: 0,
     order: "asc",
     orderBy: "name",
     page: 0,
     searchVal: "",
-    oldEmployee: ""
+    oldEmployee: "",
+    isDisplayAllEmployee: true
+    // curEmployee: []
   };
 
   eventListenerAdded = false;
@@ -148,7 +151,6 @@ class Home extends Component {
           employeeList.hasNextPage &&
           clientHeight + scrollTop === scrollHeight
         ) {
-          // alert("bottom!!");
           this.nextPage();
         }
       });
@@ -170,24 +172,33 @@ class Home extends Component {
         page: this.state.page,
         limit: this.state.rowsPerPage
       };
-      //   console.log(property, "property");
-      //   console.log(defaultData, "def");
       dispatch(requestStart());
       dispatch(allEmployees(defaultData));
     });
   };
 
   nextPage = () => {
-    const { page } = this.state;
+    const { page, isDisplayAllEmployee, employee } = this.state;
+    const { dispatch } = this.props;
     this.setState({ page: page + 1 }, () => {
-      const { dispatch } = this.props;
-      const defaultData = {
-        order: this.state.order,
-        orderBy: this.state.orderBy,
-        page: this.state.page,
-        limit: this.state.rowsPerPage
-      };
-      dispatch(allEmployees(defaultData));
+      if (isDisplayAllEmployee) {
+        const defaultData = {
+          order: this.state.order,
+          orderBy: this.state.orderBy,
+          page: this.state.page,
+          limit: this.state.rowsPerPage
+        };
+        dispatch(allEmployees(defaultData));
+      } else {
+        const curData = {
+          order: this.state.order,
+          orderBy: this.state.orderBy,
+          page: this.state.page,
+          limit: this.state.rowsPerPage,
+          managerId: employee._id
+        };
+        dispatch(allEmployees(curData));
+      }
     });
   };
 
@@ -202,7 +213,6 @@ class Home extends Component {
     console.log(employee);
     this.setState({ oldManager: employee.manager });
     this.setState({ employee: employee });
-    console.log(this.state, "test Eidt");
   };
 
   handleCloseEdit = () => {
@@ -210,7 +220,6 @@ class Home extends Component {
   };
 
   handleDelete = id => {
-    console.log("handleDate", id);
     this.setState({ page: 0 }, () => {
       const { dispatch } = this.props;
       const curData = {
@@ -224,16 +233,50 @@ class Home extends Component {
     });
   };
   handleUpdateEmployee = employee => {
-    console.log("edit");
-    const { dispatch } = this.props;
-    const curData = {
-      order: this.state.order,
-      orderBy: this.state.orderBy,
-      page: this.state.page,
-      limit: this.state.rowsPerPage
-    };
-    console.dir(employee);
-    dispatch(updateEmployee(employee, curData));
+    this.setState({ page: 0 }, () => {
+      const { dispatch } = this.props;
+      const curData = {
+        order: this.state.order,
+        orderBy: this.state.orderBy,
+        page: this.state.page,
+        limit: this.state.rowsPerPage
+      };
+      dispatch(updateEmployee(employee, curData));
+    });
+  };
+  hanldeShowDr = employee => {
+    this.setState({ page: 0, employee, isDisplayAllEmployee: false }, () => {
+      if (employee.numberOfDr <= 0) {
+        alert("NO DR");
+      } else {
+        const curData = {
+          order: this.state.order,
+          orderBy: this.state.orderBy,
+          page: this.state.page,
+          limit: this.state.rowsPerPage,
+          managerId: employee._id
+        };
+        // console.log(curData, "curData");
+        const { dispatch } = this.props;
+        dispatch(requestStart());
+        dispatch(allEmployees(curData));
+      }
+    });
+  };
+  handleReset = e => {
+    this.setState(
+      { page: 0, employee: null, isDisplayAllEmployee: true },
+      () => {
+        const { dispatch } = this.props;
+        const defaultData = {
+          order: this.state.order,
+          orderBy: this.state.orderBy,
+          page: this.state.page,
+          limit: this.state.rowsPerPage
+        };
+        dispatch(allEmployees(defaultData));
+      }
+    );
   };
 
   render() {
@@ -246,6 +289,15 @@ class Home extends Component {
     } else if (employeeList.error !== "") {
       usersUI = (
         <div>
+          <div>
+            <Button
+              onClick={e => {
+                this.handleReset();
+              }}
+            >
+              Reset
+            </Button>
+          </div>
           <div>
             <TextField
               id="standard-search"
@@ -266,7 +318,6 @@ class Home extends Component {
               <Table style={{ tableLayout: "fixed" }}>
                 <TableBody ref="table-body">
                   {employeeList.data.map((employee, index) => {
-                    console.log(employee.startDate, "startDATE");
                     const lowerCaseName = employee.name.toLowerCase();
                     const lowerCaseSearchVal = searchVal.toLowerCase();
                     if (lowerCaseName.includes(lowerCaseSearchVal)) {
@@ -279,7 +330,7 @@ class Home extends Component {
                               <Avatar
                                 alt="avatar"
                                 src={
-                                  "https://static.standard.co.uk/s3fs-public/thumbnails/image/2017/08/15/12/smileyfaceemoji1508a.jpg?w968"
+                                  "https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png"
                                 }
                               />
                             )}
@@ -288,13 +339,27 @@ class Home extends Component {
                           <TableCell>{employee.title}</TableCell>
                           <TableCell>{employee.sex}</TableCell>
                           <TableCell>{employee.startDate}</TableCell>
-                          <TableCell>{employee.officePhone}</TableCell>
-                          <TableCell>{employee.numberOfDr}</TableCell>
+                          <TableCell>
+                            <a href={`tel: ${employee.officePhone}`}>
+                              {employee.officePhone}
+                            </a>
+                          </TableCell>
+                          <TableCell
+                            onClick={e => {
+                              this.hanldeShowDr(employee);
+                            }}
+                          >
+                            {employee.numberOfDr}
+                          </TableCell>
                           <TableCell>{employee.sms}</TableCell>
                           <TableCell>
                             {employee.manager ? employee.manager.name : ""}
                           </TableCell>
-                          <TableCell href="">{employee.email}</TableCell>
+                          <TableCell>
+                            <a href={`mailto:${employee.email}`}>
+                              {employee.email}
+                            </a>
+                          </TableCell>
                           <Button
                             variant="contained"
                             color="default"
@@ -312,6 +377,13 @@ class Home extends Component {
                           >
                             Edit
                           </Button>
+                          {/* <Button
+                            onClick={e => {
+                              this.hanldeShowDr(employee);
+                            }}
+                          >
+                            show DR
+                          </Button> */}
                           <Dialog
                             open={this.state.edit}
                             aria-labelledby="form-dialog-title"

@@ -28,12 +28,25 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 router.get("/allEmployees", (req, res) => {
-  //console.log("all");
+  console.log("all");
   const orderBy = req.query.orderBy || "name";
   const order = req.query.order || "asc";
   const page = parseInt(req.query.page) || 0;
   const limit = parseInt(req.query.limit) || 5;
-  const query = {};
+
+  const query =
+    req.query.managerId === undefined ? {} : { manager: req.query.managerId };
+  console.log(query);
+  // const q = req.query.managerId || null;
+  // // console.log(q, "q");
+  // if (req.query.managerId !== null) {
+  //   const query = { manager: req.query.managerId };
+  // } else {
+  //   const query = {};
+  // }
+  // const query = {};
+  console.log(query, "ManagerID");
+
   const options = {
     page: page + 1,
     limit,
@@ -58,7 +71,7 @@ router.get("/employeeList", (req, res) => {
 });
 
 router.get("/editEmployeeList", (req, res) => {
-  User.find({ id: { $ne: req.query.id } }, "id name", function(err, docs) {
+  User.find({ _id: { $ne: req.query.id } }, "id name", function(err, docs) {
     if (err) res.send(err);
     res.status(200).json(docs);
   });
@@ -81,13 +94,13 @@ router.post("/addUser", upload.single("avatar"), (req, res) => {
     startDate: req.body.startDate,
     officePhone: req.body.officePhone,
     cellPhone: req.body.cellPhone,
-    sms: 0, // TODO: Use the correct format.
+    sms: req.body.sms,
     email: req.body.email,
-    manager: req.body.manager === "None" ? "" : req.body.manager,
+    // manager: req.body.manager === "None" ? "" : req.body.manager,
     numberOfDr: 0,
     manager:
       req.body.manager === "" || req.body.manager === "undefined"
-        ? ""
+        ? null
         : req.body.manager,
     avatar: req.file
       ? {
@@ -153,33 +166,37 @@ router.delete("/delete", (req, res) => {
 });
 
 router.put("/updateEmployee", upload.single("avatar"), (req, res) => {
-  console.log("id");
   let id = req.query.id;
   let oldManager = req.body.oldManger;
   let newManager = req.body.newManager;
-  console.log(id, "id");
+  console.log("oldManager", oldManager);
+  console.log("newManager", newManager);
   // if Manager changed 1. None - new Manager 2. oldManger to newManger 3. oldMange to None
   // find oldManager and decrease 1 to the old ManagerReport
   // Manager change ?
   if (oldManager !== newManager) {
-    User.findOneAndUpdate(
-      { id: oldManager },
-      { $inc: { numberOfDr: -1 } },
-      function(err, user) {
-        if (err) res.status(500).send(err);
-        // res.send(user);
-      }
-    );
-    User.findOneAndUpdate(
-      { id: req.boy.manager },
-      { $inc: { numberOfDr: 1 } },
-      function(err, user) {
-        if (err) res.status(500).send(err);
-        // res.send(user);
-      }
-    );
+    if (oldManager) {
+      User.findOneAndUpdate(
+        { id: oldManager },
+        { $inc: { numberOfDr: -1 } },
+        function(err, user) {
+          if (err) res.status(500).send(err);
+          // res.send(user);
+        }
+      );
+    }
+    if (newManager) {
+      User.findOneAndUpdate(
+        { id: req.body.manager },
+        { $inc: { numberOfDr: 1 } },
+        function(err, user) {
+          if (err) res.status(500).send(err);
+          // res.send(user);
+        }
+      );
+    }
   }
-  console.log(req.body.name);
+  console.log("id", req.body.id);
   User.findOneAndUpdate(
     { _id: id },
     {
@@ -190,7 +207,10 @@ router.put("/updateEmployee", upload.single("avatar"), (req, res) => {
       cellPhone: req.body.cellPhone,
       sms: req.body.sms,
       email: req.body.email,
-      // manager: req.body.manager,
+      manager:
+        req.body.newManager === "" || req.body.newManager === "undefined"
+          ? null
+          : req.body.newManager,
       numberOfDr: req.body.numberOfDr,
       avatar: req.file
         ? {
@@ -200,7 +220,7 @@ router.put("/updateEmployee", upload.single("avatar"), (req, res) => {
         : null
     },
     function(err, user) {
-      if (err) console.log(err);
+      if (err) res.status(500).send(err);
       else res.status(200).send(user);
     }
   );

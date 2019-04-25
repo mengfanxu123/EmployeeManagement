@@ -10,21 +10,26 @@ import { editManagerList } from "../redux/action-creators/employees";
 import NumberFormat from "react-number-format";
 
 class Edit extends Component {
-  state = {
-    avatar: null,
-    name: this.props.employeeDetail.name,
-    sex: this.props.employeeDetail.sex,
-    title: this.props.employeeDetail.title,
-    id: this.props.employeeDetail._id,
-    startDate: this.props.employeeDetail.startDate,
-    email: this.props.employeeDetail.email,
-    manager: this.props.employeeDetail.manager,
-    sms: this.props.employeeDetail.sms,
-    previewURL: this.props.employeeDetail.avata
-      ? this.props.employeeDetail.avatar.data
-      : null,
-    cellPhone: this.props.employeeDetail.cellPhone
-  };
+  constructor(props) {
+    super(props);
+    const { employeeDetail } = props;
+
+    this.state = {
+      avatar: null,
+      name: employeeDetail.name,
+      sex: employeeDetail.sex,
+      title: employeeDetail.title,
+      id: employeeDetail._id,
+      startDate: employeeDetail.startDate,
+      email: employeeDetail.email,
+      newManager: employeeDetail.manager ? employeeDetail.manager._id : null,
+      sms: employeeDetail.sms,
+      previewURL: employeeDetail.avata ? employeeDetail.avatar.data : null,
+      cellPhone: employeeDetail.cellPhone,
+      numberOfDr: employeeDetail.numberOfDr
+    };
+  }
+
   componentDidMount() {
     const { dispatch } = this.props;
     dispatch(editManagerList(this.state.id));
@@ -32,7 +37,6 @@ class Edit extends Component {
 
   handleAvatar = e => {
     let file = e.target.files[0];
-    console.log(file, "test files");
     let reader = new FileReader();
     reader.onloadend = () => {
       this.setState({ avatar: file, previewURL: reader.result });
@@ -42,24 +46,26 @@ class Edit extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
-    //console.log(this.state);
     const formData = new FormData();
     for (let key in this.state) {
       if (key !== "previewURL") {
         formData.append(key, this.state[key]);
-        //console.log(formData);
       }
     }
-    //console.log(formData);
+    const { employeeDetail } = this.props;
+    formData.append(
+      "oldManager",
+      employeeDetail.manager ? employeeDetail.manager._id : null
+    );
     this.props.updateEmployee(formData);
     this.props.closeEdit();
   };
-  render() {
-    const { previewURL, name } = this.state;
-    const { editManagerList } = this.props;
-    const employee = this.props.employeeDetail;
-    console.log(employee);
 
+  handleManagerChange = e => this.setState({ newManager: e.target.value });
+
+  render() {
+    const { previewURL, name, newManager } = this.state;
+    const { editManagerList } = this.props;
     return (
       <div className="editForm">
         <ValidatorForm
@@ -74,7 +80,7 @@ class Edit extends Component {
                   <img src={previewURL} alt="loading" />
                 ) : (
                   <img
-                    src="https://static.standard.co.uk/s3fs-public/thumbnails/image/2017/08/15/12/smileyfaceemoji1508a.jpg?w968"
+                    src="https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png"
                     alt="loading..."
                   />
                 )}
@@ -150,6 +156,7 @@ class Edit extends Component {
                 customInput={TextField}
                 format="+1(###)###-####"
                 mask="_"
+                label="officePhone"
                 value={this.state.officePhone}
                 onChange={e => this.setState({ officePhone: e.target.value })}
                 validators={["required"]}
@@ -179,13 +186,13 @@ class Edit extends Component {
               <TextField
                 id="manager"
                 select
-                label="Select"
-                defaultValue={this.state.manager}
-                onChange={e => this.setState({ manager: e.target.value })}
+                label="manager"
+                onChange={this.handleManagerChange}
                 margin="normal"
+                value={newManager}
               >
                 <MenuItem>None</MenuItem>
-                {editManagerList.data.map(employee => (
+                {editManagerList.map(employee => (
                   <MenuItem key={employee.id} value={`${employee._id}`}>
                     {employee.name}
                   </MenuItem>
@@ -210,7 +217,7 @@ class Edit extends Component {
 }
 
 const mapStateToProps = function(state) {
-  return { editManagerList: state.employees };
+  return { editManagerList: state.employees.managerList };
 };
 
 export default connect(mapStateToProps)(Edit);

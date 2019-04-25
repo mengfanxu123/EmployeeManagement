@@ -8,7 +8,7 @@ const userSchema = new Schema({
   startDate: String,
   officePhone: String,
   cellPhone: String,
-  sms: Number,
+  sms: String,
   email: String,
   manager: { type: Schema.Types.ObjectId, ref: "employeeManager" },
   numberOfDr: Number,
